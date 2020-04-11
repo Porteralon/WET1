@@ -37,12 +37,7 @@ void mapDestroy(Map map)
     {
         return;
     }
-    while (mapGetSize(map)>0) {
-        mapRemove(map, mapGetFirst(map));
-    }
-    
-    free(map->keys);
-    free(map->values);
+    mapClear(map);
     free(map);
 }
 
@@ -103,8 +98,8 @@ MapResult mapPut(Map map, const char* key, const char* data)
             return MAP_OUT_OF_MEMORY;
         }
     }
-    MAP_FOREACH (iterator, map) {
-           if (iterator == key)
+    MAP_FOREACH (i, map) {
+           if (i == key)
            {
                 map->values[map->iterator] = data;
                 return MAP_SUCCESS;
@@ -124,11 +119,9 @@ char* mapGet(Map map, const char* key)
     {
         return NULL;
     }
-    MAP_FOREACH(keyGet,map)
-    {
-        if (strcmp(keyGet,key)==0)
-        {
-            
+    for (int i=0;i<mapGetSize(map);i++) {
+        if (strcmp(map->values[i], key) == 0) {
+            return map->values[i];
         }
     }
 }
@@ -140,16 +133,19 @@ MapResult mapRemove(Map map, const char* key)
     if (key == NULL || map == NULL) {
       return MAP_NULL_ARGUMENT;
     }
-    if (!mapContains(map, key)) {
-        return MAP_ITEM_DOES_NOT_EXIST;
+    MAP_FOREACH(i, map) {
+        if (strcmp(i, key) == 0) {
+            map->keys[map->iterator] = map->keys[mapGetSize(map) - 1];
+            map->values[map->iterator] = map->values[mapGetSize(map) - 1];
+            free(map->keys[mapGetSize(map)-1]);
+            free(map->values[mapGetSize(map)-1]);
+            map->size--;
+            map->maxSize--;
+            return MAP_SUCCESS;
+        }
     }
-    
-    map->keys[map->iterator] = map->keys[mapGetSize(map) - 1];
-    map->values[map->iterator] = map->values[mapGetSize(map) - 1];
-    free(map->keys[mapGetSize(map)-1]);
-    free(map->values[mapGetSize(map)-1]);
-    map->size--;
-    return MAP_SUCCESS;
+    return MAP_ITEM_DOES_NOT_EXIST;
+
 }
 
 char* mapGetFirst(Map map)
@@ -158,30 +154,24 @@ char* mapGetFirst(Map map)
     {
         return NULL;
     }
+    map->iterator = 0;
     return (map->keys[0]);
 }
 
-/**
-*	mapGetNext: Advances the map iterator to the next key element and returns it.
-*	The next key element is any key element not previously returned by the iterator.
-* @param map - The map for which to advance the iterator
-* @return
-* 	NULL if reached the end of the map, or the iterator is at an invalid state
-* 	or a NULL sent as argument
-* 	The next key element on the map in case of success
-*/
+
 char* mapGetNext(Map map)
 {
     if(map == NULL || map->iterator>=mapGetSize(map)-1)
     {
         return NULL;
     }
-    return (map->keys[map->iterator+1]);
+    map->iterator++;
+    return (map->keys[map->iterator]);
 }
 
 MapResult mapClear(Map map) {
     if (map == NULL) {
-        return NULL;
+        return MAP_NULL_ARGUMENT;
     }
     while (mapGetsize(map) > 0)
     {

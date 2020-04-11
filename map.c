@@ -52,9 +52,8 @@ Map mapCopy(Map map)
     {
         return NULL;
     }
-    for (int i=0;i<mapGetSize(map);i++)
-    {
-        if (!mapPut(newMap, map->keys[i], map->values[i]))
+    MAP_FOREACH(i, map) {
+        if (!mapPut(newMap, i, map->values[map->iterator]))
         {
             mapDestroy(newMap);
             return NULL;
@@ -78,8 +77,8 @@ bool mapContains(Map map, const char* key)
     if (map == NULL || key == NULL) {
         return false;
     }
-    MAP_FOREACH(iterator, map) {
-        if (key == iterator) {
+    MAP_FOREACH(i, map) {
+        if (!strcmp(key, i)) {
             return true;
         }
     }
@@ -89,8 +88,7 @@ return false;
 
 MapResult mapPut(Map map, const char* key, const char* data)
 {
-    assert(map != NULL);
-    if (key == NULL || data == NULL) {
+    if (map == NULL || key == NULL || data == NULL) { // map == NULL?
       return MAP_NULL_ARGUMENT;
     }
     if (mapGetSize(map) == map->maxSize) {
@@ -99,17 +97,16 @@ MapResult mapPut(Map map, const char* key, const char* data)
         }
     }
     MAP_FOREACH (i, map) {
-           if (i == key)
+           if (!strcmp(key, i))
            {
                 map->values[map->iterator] = data;
                 return MAP_SUCCESS;
            }
-       }
+    }
     map->size++;
-    strcpy(map->keys[mapGetSize(map)], key);
-    strcpy(map->values[mapGetSize(map)], data);
+    strcpy(map->keys[mapGetSize(map)-1], key);
+    strcpy(map->values[mapGetSize(map)-1], data);
     return MAP_SUCCESS;
-
 
 }
 
@@ -119,11 +116,12 @@ char* mapGet(Map map, const char* key)
     {
         return NULL;
     }
-    for (int i=0;i<mapGetSize(map);i++) {
+    for (int i=0;i<mapGetSize(map);i++) { // Check about MAP_FOREACH
         if (strcmp(map->values[i], key) == 0) {
             return map->values[i];
         }
     }
+    return NULL;
 }
 
 
@@ -155,13 +153,13 @@ char* mapGetFirst(Map map)
         return NULL;
     }
     map->iterator = 0;
-    return (map->keys[0]);
+    return (map->keys[map->iterator]);
 }
 
 
 char* mapGetNext(Map map)
 {
-    if(map == NULL || map->iterator>=mapGetSize(map)-1)
+    if(map == NULL || map->iterator>=mapGetSize(map)-1) // iterator equals to?
     {
         return NULL;
     }

@@ -83,15 +83,14 @@ bool mapContains(Map map, const char* key)
     if (map == NULL || key == NULL) {
         return false;
     }
-    for(map->iterator = 0; map->iterator<mapGetSize(map); map->iterator++) {
-        if (strcmp(map->keys[map->iterator], key)==0) {
+    MAP_FOREACH(iterator, map) {
+        if (key == iterator) {
             return true;
         }
     }
 return false;
 
 }
-
 
 MapResult mapPut(Map map, const char* key, const char* data)
 {
@@ -104,10 +103,13 @@ MapResult mapPut(Map map, const char* key, const char* data)
             return MAP_OUT_OF_MEMORY;
         }
     }
-    if (mapContains(map, key)) {
-        map->values[map->iterator] = data;
-        return MAP_SUCCESS;
-    }
+    MAP_FOREACH (iterator, map) {
+           if (iterator == key)
+           {
+                map->values[map->iterator] = data;
+                return MAP_SUCCESS;
+           }
+       }
     map->size++;
     strcpy(map->keys[mapGetSize(map)], key);
     strcpy(map->values[mapGetSize(map)], data);
@@ -122,7 +124,13 @@ char* mapGet(Map map, const char* key)
     {
         return NULL;
     }
-    return (mapContains(map,key) ? map->values[map->iterator] : NULL);    
+    MAP_FOREACH(keyGet,map)
+    {
+        if (strcmp(keyGet,key)==0)
+        {
+            
+        }
+    }
 }
 
 
@@ -168,8 +176,7 @@ char* mapGetNext(Map map)
     {
         return NULL;
     }
-    map->iterator++;
-    return (map->keys[map->iterator]);
+    return (map->keys[map->iterator+1]);
 }
 
 MapResult mapClear(Map map) {

@@ -1,5 +1,7 @@
 #include "map.h"
 #define INITIAL_SIZE 20
+
+
 typedef struct Map_t {
  char** keys;
  char** values; 
@@ -38,23 +40,22 @@ void mapDestroy(Map map)
         return;
     }
     mapClear(map);
+    free(map->keys);
+    free(map->values);
     free(map);
 }
 
 Map mapCopy(Map map)
 {
-    if (map==NULL)
-    {
+    if (map==NULL) {
         return NULL;
     }
     Map newMap = mapCreate();
-    if(newMap == NULL)
-    {
+    if(newMap == NULL) {
         return NULL;
     }
     MAP_FOREACH(i, map) {
-        if (!mapPut(newMap, i, map->values[map->iterator]))
-        {
+        if (mapPut(newMap, i, map->values[map->iterator]) != MAP_SUCCESS) {
             mapDestroy(newMap);
             return NULL;
         }
@@ -82,9 +83,11 @@ bool mapContains(Map map, const char* key)
             return true;
         }
     }
-return false;
+    return false;
 
 }
+
+// remove all MAP_FOREACH
 
 MapResult mapPut(Map map, const char* key, const char* data)
 {
@@ -97,14 +100,26 @@ MapResult mapPut(Map map, const char* key, const char* data)
         }
     }
     MAP_FOREACH (i, map) {
-           if (!strcmp(key, i))
-           {
-                map->values[map->iterator] = data;
-                return MAP_SUCCESS;
-           }
+        if (!strcmp(key, i)) {
+            free(map->values[map->iterator]);
+            map->values[map->iterator] = malloc(sizeof(char)*(strlen(data)+1)); // add generic funct
+            if (map->values[map->iterator]) {
+                return NULL; // should check what return
+            }
+            strcpy(map->values[map->iterator], data);
+            return MAP_SUCCESS;
+        }
     }
     map->size++;
+    map->keys[mapGetSize(map)-1] = malloc(sizeof(char)*(strlen(key)+1));
+    if (map->keys[mapGetSize(map)-1]) {
+        return NULL; // should check what return
+    }
     strcpy(map->keys[mapGetSize(map)-1], key);
+    map->values[mapGetSize(map)-1] = malloc(sizeof(char)*(strlen(data)+1));
+    if (map->values[mapGetSize(map)-1]) {
+        return NULL; // should check what return
+    }
     strcpy(map->values[mapGetSize(map)-1], data);
     return MAP_SUCCESS;
 
@@ -116,7 +131,7 @@ char* mapGet(Map map, const char* key)
     {
         return NULL;
     }
-    for (int i=0;i<mapGetSize(map);i++) { // Check about MAP_FOREACH
+    for (int i = 0; i<mapGetSize(map); i++) { // Check about MAP_FOREACH
         if (strcmp(map->values[i], key) == 0) {
             return map->values[i];
         }
@@ -133,12 +148,13 @@ MapResult mapRemove(Map map, const char* key)
     }
     MAP_FOREACH(i, map) {
         if (strcmp(i, key) == 0) {
+            free(map->keys[map->iterator]);
+            free(map->values[map->iterator]);
             map->keys[map->iterator] = map->keys[mapGetSize(map) - 1];
             map->values[map->iterator] = map->values[mapGetSize(map) - 1];
-            free(map->keys[mapGetSize(map)-1]);
-            free(map->values[mapGetSize(map)-1]);
+            map->keys[mapGetSize(map)-1] = NULL;
+            map->values[mapGetSize(map)-1] = NULL;
             map->size--;
-            map->maxSize--;
             return MAP_SUCCESS;
         }
     }
@@ -159,7 +175,7 @@ char* mapGetFirst(Map map)
 
 char* mapGetNext(Map map)
 {
-    if(map == NULL || map->iterator>=mapGetSize(map)-1) // iterator equals to?
+    if(map == NULL || map->iterator>=mapGetSize(map)-1)
     {
         return NULL;
     }

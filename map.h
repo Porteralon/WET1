@@ -17,7 +17,7 @@
 *   mapDestroy		- Deletes an existing map and frees all resources
 *   mapCopy		- Copies an existing map
 *   mapGetSize		- Returns the size of a given map
-*   mapContains	- returns weather or not a key exists inside the map.
+*   mapContains	- returns wether or not a key exists inside the map.
 *   				  This resets the internal iterator.
 *   mapPut		    - Gives a specific key a given value.
 *   				  If the key exists, the value is overridden.

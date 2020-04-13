@@ -1,7 +1,7 @@
 #include "map.h"
 #define INITIAL_SIZE 20
 
-
+typedef struct 
 typedef struct Map_t {
  char** keys;
  char** values; 
@@ -9,6 +9,7 @@ typedef struct Map_t {
  int maxSize;
  int iterator;
 };
+
 
 
 Map mapCreate() {

@@ -17,16 +17,13 @@
 *   mapDestroy		- Deletes an existing map and frees all resources
 *   mapCopy		- Copies an existing map
 *   mapGetSize		- Returns the size of a given map
-*   mapContains	- returns wether or not a key exists inside the map.
-*   				  This resets the internal iterator.
+*   mapContains	- returns weather or not a key exists inside the map.
 *   mapPut		    - Gives a specific key a given value.
 *   				  If the key exists, the value is overridden.
-*   				  This resets the internal iterator.
 *   mapGet  	    - Returns the data paired to a key which matches the given key.
 *					  Iterator status unchanged
 *   mapRemove		- Removes a pair of (key,data) elements for which the key
 *                    matches a given element (using the strcmp function).
-*   				  This resets the internal iterator.
 *   mapGetFirst	- Sets the internal iterator to the first key in the
 *   				  map, and returns it.
 *   mapGetNext		- Advances the internal iterator to the next key and

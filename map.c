@@ -1,16 +1,38 @@
 #include "map.h"
 #define INITIAL_SIZE 20
+#define DATA_ITEM_NOT_EXIST -1
 
-typedef struct 
+typedef struct Element_t {
+    char* keys;
+    char* values;
+} *Element;
+
 typedef struct Map_t {
- char** keys;
- char** values; 
- int size;
- int maxSize;
- int iterator;
+    Element data;
+    int size;
+    int maxSize;
+    int iterator;
 };
 
+static int dataFind(Map map, const char* toFind)
+{
+    for (int i = 0; i<mapGetSize(map); i++){
+        if(strcmp(map->data[i].keys, toFind)==0) {
+            return i;
+        }
+    }
+    return DATA_ITEM_NOT_EXIST;
+}
 
+static char* stringCopy(const char* toCopy)
+{
+    char* out = malloc(sizeof(char)*strlen(toCopy)+1);
+    if(!out)
+    {
+        return NULL;
+    }
+    return (strcpy(out,toCopy));
+}
 
 Map mapCreate() {
     Map map = malloc(sizeof(*map));
@@ -18,14 +40,8 @@ Map mapCreate() {
     return NULL;
     }
 
-    map->keys = malloc(INITIAL_SIZE * sizeof(char*));
-    if (map->keys == NULL) {
-        free(map);
-        return NULL;
-    }
-    map->values = malloc(INITIAL_SIZE * sizeof(char*));
-    if (map->values == NULL) {
-        free(map->keys);
+    map->data = malloc(INITIAL_SIZE * sizeof(*map->data));
+    if (map->data == NULL) {
         free(map);
         return NULL;
     }
@@ -41,8 +57,7 @@ void mapDestroy(Map map)
         return;
     }
     mapClear(map);
-    free(map->keys);
-    free(map->values);
+    free(map->data);
     free(map);
 }
 
@@ -55,8 +70,8 @@ Map mapCopy(Map map)
     if(newMap == NULL) {
         return NULL;
     }
-    MAP_FOREACH(i, map) {
-        if (mapPut(newMap, i, map->values[map->iterator]) != MAP_SUCCESS) {
+    for (int i = 0; i<mapGetSize(map); i++) {
+        if (mapPut(newMap, map->data[i].keys, map->data[i].values) != MAP_SUCCESS) {
             mapDestroy(newMap);
             return NULL;
         }
@@ -79,11 +94,11 @@ bool mapContains(Map map, const char* key)
     if (map == NULL || key == NULL) {
         return false;
     }
-    MAP_FOREACH(i, map) {
-        if (!strcmp(key, i)) {
+    int key_to_find = dataFind(map, key);
+        if (key_to_find != DATA_ITEM_NOT_EXIST) {
+            map->iterator = key_to_find;
             return true;
         }
-    }
     return false;
 
 }
@@ -95,35 +110,35 @@ MapResult mapPut(Map map, const char* key, const char* data)
     if (map == NULL || key == NULL || data == NULL) { // map == NULL?
       return MAP_NULL_ARGUMENT;
     }
+    if (mapContains(map,key)) {
+        free(map->data[map->iterator].values);
+        map->data[map->iterator].values = stringCopy(data);
+        if (!map->data[map->iterator].values) {
+            return MAP_OUT_OF_MEMORY; 
+        }
+        return MAP_SUCCESS;
+    }
     if (mapGetSize(map) == map->maxSize) {
         if (mapExpand(map) == MAP_OUT_OF_MEMORY) { // need to implement expand
             return MAP_OUT_OF_MEMORY;
         }
     }
-    MAP_FOREACH (i, map) {
-        if (!strcmp(key, i)) {
-            free(map->values[map->iterator]);
-            map->values[map->iterator] = malloc(sizeof(char)*(strlen(data)+1)); // add generic funct
-            if (map->values[map->iterator]) {
-                return NULL; // should check what return
-            }
-            strcpy(map->values[map->iterator], data);
-            return MAP_SUCCESS;
-        }
-    }
     map->size++;
-    map->keys[mapGetSize(map)-1] = malloc(sizeof(char)*(strlen(key)+1));
-    if (map->keys[mapGetSize(map)-1]) {
-        return NULL; // should check what return
+    Element newData = malloc(sizeof(struct Element_t));
+    if (!newData){
+        return MAP_OUT_OF_MEMORY;
     }
-    strcpy(map->keys[mapGetSize(map)-1], key);
-    map->values[mapGetSize(map)-1] = malloc(sizeof(char)*(strlen(data)+1));
-    if (map->values[mapGetSize(map)-1]) {
-        return NULL; // should check what return
+    newData->keys = stringCopy(key);
+    if (!newData->keys) {
+        
+        return MAP_OUT_OF_MEMORY;
     }
-    strcpy(map->values[mapGetSize(map)-1], data);
+    newData->values = stringCopy(data);
+    if (!newData->values) {
+        return MAP_OUT_OF_MEMORY; 
+    }
+    map->data[mapGetSize(map) - 1] = *newData;
     return MAP_SUCCESS;
-
 }
 
 char* mapGet(Map map, const char* key)
@@ -147,18 +162,15 @@ MapResult mapRemove(Map map, const char* key)
     if (key == NULL || map == NULL) {
       return MAP_NULL_ARGUMENT;
     }
-    MAP_FOREACH(i, map) {
-        if (strcmp(i, key) == 0) {
-            free(map->keys[map->iterator]);
-            free(map->values[map->iterator]);
-            map->keys[map->iterator] = map->keys[mapGetSize(map) - 1];
-            map->values[map->iterator] = map->values[mapGetSize(map) - 1];
-            map->keys[mapGetSize(map)-1] = NULL;
-            map->values[mapGetSize(map)-1] = NULL;
+    int toRemove = dataFind(map, key);
+        if (toRemove != DATA_ITEM_NOT_EXIST) {
+            free(map->data[toRemove].keys);
+            free(map->data[toRemove].values);
+            free(map->data[toRemove]);
+            map->data[toRemove] = map->data[mapGetSize(map) - 1];
             map->size--;
             return MAP_SUCCESS;
         }
-    }
     return MAP_ITEM_DOES_NOT_EXIST;
 
 }
@@ -190,7 +202,7 @@ MapResult mapClear(Map map) {
     }
     while (mapGetsize(map) > 0)
     {
-        mapRemove(map, map->keys[mapGetSize(map)-1]);
+        mapRemove(map, mapGetFirst(map));
     }
     return MAP_SUCCESS;
     
